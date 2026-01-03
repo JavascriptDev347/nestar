@@ -41,6 +41,7 @@ const MemberSchema = new Schema({
   },
   memberImage:{
     type:String,
+    default:""
   },
   memberAddress:{
     type:String,
