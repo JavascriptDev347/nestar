@@ -20,7 +20,8 @@ const PropertySchema = new Schema({
     type:String,
     enum:PropertyLocation,
     required:true,
-  },propertyAddress: {
+  },
+  propertyAddress: {
     type: String,
     required: true,
   },
@@ -53,7 +54,8 @@ const PropertySchema = new Schema({
   propertyViews: {
     type: Number,
     default: 0,
-  },propertyLikes: {
+  },
+  propertyLikes: {
     type: Number,
     default: 0,
   },
