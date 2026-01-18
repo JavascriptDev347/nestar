@@ -6,10 +6,11 @@ import { MemberModule } from '../member/member.module';
 import { PropertyService } from './property.service';
 import { PropertyResolver } from './property.resolver';
 import { ViewModule } from '../view/view.module';
+import { LikeModule } from "../like/like.module";
 
 @Module({
   imports: [MongooseModule.forFeature([{name:"Property", schema: PropertySchema}]),
-  AuthModule,MemberModule,ViewModule],
+  AuthModule,MemberModule,ViewModule,LikeModule],
 
   providers: [PropertyService,PropertyResolver],
   exports:[PropertyService]

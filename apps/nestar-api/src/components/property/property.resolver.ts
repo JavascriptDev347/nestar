@@ -16,6 +16,7 @@ import { WithoutGuard } from '../auth/guards/without.guard';
 import { shapeIntoMongoObjectId } from '../../libs/config';
 import { UserType } from '@apollo/server/src/plugin/schemaReporting/generated/operations';
 import { PropertyUpdate } from '../../libs/dto/property/property.update';
+import { AuthGuard } from '../auth/guards/auth.guard';
 
 @Resolver()
 export class PropertyResolver {
@@ -110,4 +111,17 @@ export class PropertyResolver {
     return await this.propertyService.removePropertyByAdmin(propertyId);
   }
 
+
+
+  /** LIKE LOGIC **/
+  @UseGuards(AuthGuard)
+  @Mutation(() => Property)
+  public async likeTargetProperty(
+    @Args('propertyId') input: string,
+    @AuthMember('_id') memberId: ObjectId,
+  ): Promise<Property> {
+    console.log('mutation: likeTargetProperty');
+    const likeRefIf = shapeIntoMongoObjectId(input);
+    return await this.propertyService.likeTargetProperty(memberId, likeRefIf);
+  }
 }

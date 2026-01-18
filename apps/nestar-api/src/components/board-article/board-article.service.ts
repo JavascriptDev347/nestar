@@ -22,6 +22,9 @@ import { BoardArticleStatus } from '../../libs/enums/board-article.enum';
 import { ViewGroup } from '../../libs/enums/view.enum';
 import { BoardArticleUpdate } from '../../libs/dto/board-article/board-article.update';
 import { lookupMember, shapeIntoMongoObjectId } from '../../libs/config';
+import { LikeInput } from '../../libs/dto/like/like.input';
+import { LikeGroup } from '../../libs/enums/like.enum';
+import { LikeService } from '../like/like.service';
 
 @Injectable()
 export class BoardArticleService {
@@ -30,6 +33,7 @@ export class BoardArticleService {
     private readonly boardModel: Model<BoardArticle>,
     private readonly memberService: MemberService,
     private readonly viewService: ViewService,
+    private readonly likeService: LikeService,
   ) {}
 
   public async createBoardArticle(
@@ -130,14 +134,19 @@ export class BoardArticleService {
     return result;
   }
 
-  public async getBoardArticles(memberId: ObjectId,input:BoardArticlesInquiry): Promise<BoardArticles> {
-  const {articleCategory,text}= input.search;
-  const match:T = {articleStatus:BoardArticleStatus.ACTIVE};
-    const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
-    if(articleCategory) match.articleCategory = articleCategory;
-    if(text) match.articleTitle = { $regex: new RegExp(text, 'i') };
+  public async getBoardArticles(
+    memberId: ObjectId,
+    input: BoardArticlesInquiry,
+  ): Promise<BoardArticles> {
+    const { articleCategory, text } = input.search;
+    const match: T = { articleStatus: BoardArticleStatus.ACTIVE };
+    const sort: T = {
+      [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC,
+    };
+    if (articleCategory) match.articleCategory = articleCategory;
+    if (text) match.articleTitle = { $regex: new RegExp(text, 'i') };
 
-    if(input.search?.memberId) {
+    if (input.search?.memberId) {
       match.memberId = shapeIntoMongoObjectId(input.search.memberId);
     }
 
@@ -149,27 +158,30 @@ export class BoardArticleService {
           $facet: {
             list: [
               { $skip: (input.page - 1) * input.limit },
-              { $limit: input. limit },
+              { $limit: input.limit },
               // meLiked
               lookupMember,
               { $unwind: '$memberData' },
             ],
             metaCounter: [{ $count: 'total' }],
-          }
-        }
+          },
+        },
       ])
       .exec();
 
-    if (!result.length) throw new InternalServerErrorException (Message.NO_DATA_FOUND);
+    if (!result.length)
+      throw new InternalServerErrorException(Message.NO_DATA_FOUND);
     return result[0];
   }
 
-
-  public async getAllBoardArticlesByAdmin(input:AllBoardArticlesInquiry):Promise<BoardArticles> {
-    const { articleCategory,articleStatus}=input.search;
-    const match:T = {};
-    const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
-
+  public async getAllBoardArticlesByAdmin(
+    input: AllBoardArticlesInquiry,
+  ): Promise<BoardArticles> {
+    const { articleCategory, articleStatus } = input.search;
+    const match: T = {};
+    const sort: T = {
+      [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC,
+    };
 
     if (articleStatus) match.articleStatus = articleStatus;
     if (articleCategory) match.articleCategory = articleCategory;
@@ -192,11 +204,14 @@ export class BoardArticleService {
         },
       ])
       .exec();
-    if (!result.length) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+    if (!result.length)
+      throw new InternalServerErrorException(Message.NO_DATA_FOUND);
     return result[0];
   }
 
-  public async updateBoardArticleByAdmin(input: BoardArticleUpdate): Promise<BoardArticle> {
+  public async updateBoardArticleByAdmin(
+    input: BoardArticleUpdate,
+  ): Promise<BoardArticle> {
     const { _id, articleStatus } = input;
 
     const result = await this.boardModel
@@ -224,14 +239,45 @@ export class BoardArticleService {
     return result;
   }
 
-  public async removeBoardArticleByAdmin(articleId: ObjectId): Promise<BoardArticle> {
-    const search: T = { _id: articleId, articleStatus: BoardArticleStatus.DELETE };
+  public async removeBoardArticleByAdmin(
+    articleId: ObjectId,
+  ): Promise<BoardArticle> {
+    const search: T = {
+      _id: articleId,
+      articleStatus: BoardArticleStatus.DELETE,
+    };
 
     const result = await this.boardModel.findOneAndDelete(search).exec();
     if (!result) throw new InternalServerErrorException(Message.REMOVE_FAILED);
 
     return result;
   }
+
+  public async likeTargetBoardArticle(
+    memberId: ObjectId,
+    likeRefId: ObjectId,
+  ): Promise<BoardArticle> {
+    const target = await this.boardModel
+      .findOne({ _id: likeRefId, articleStatus: BoardArticleStatus.ACTIVE })
+      .exec();
+
+    if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+
+    const input: LikeInput = {
+      likeGroup: LikeGroup.ARTICLE,
+      likeRefId: likeRefId,
+      memberId: memberId,
+    };
+
+    const modifier:number = await this.likeService.toggleLike(input);
+
+    const result = await this.boardArticleStatsEditor({
+      _id:likeRefId,
+      targetKey:"articleLikes",
+      modifier:modifier
+    });
+
+    if (!result) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+    return result;
+  }
 }
-
-
