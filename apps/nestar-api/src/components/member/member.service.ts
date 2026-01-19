@@ -27,6 +27,7 @@ import { LikeService } from '../like/like.service';
 export class MemberService {
   constructor(
     @InjectModel('Member') private readonly memberModel: Model<Member>,
+    @InjectModel('Follow') private readonly followModel: Model<Follower | Following>,
     private authService: AuthService,
     private viewService: ViewService,
     private likeService: LikeService,
@@ -121,6 +122,14 @@ export class MemberService {
           .exec();
         targetMember.memberViews++;
       }
+
+      // meLiked
+      const likeInput = {
+        memberId: memberId,
+        likeRefId: targetId,
+        likeGroup: LikeGroup.MEMBER
+      };
+      targetMember.meLiked = await this.likeService.checkLikeExistence(likeInput);
     }
 
     return targetMember;

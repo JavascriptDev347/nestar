@@ -86,6 +86,13 @@ export class BoardArticleService {
         });
         targetBoardArticle.articleViews++;
       }
+      // meLiked
+      const likeInput = {
+        memberId: memberId,
+        likeRefId: articleId,
+        likeGroup: LikeGroup.MEMBER
+      };
+      targetBoardArticle.meLiked = await this.likeService.checkLikeExistence(likeInput);
     }
     return targetBoardArticle;
   }
