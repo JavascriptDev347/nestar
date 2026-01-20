@@ -17,6 +17,7 @@ import {
   lookupFollowingData,
   lookupFollowerData,
   lookupAuthMemberLiked,
+  lookupAuthMemberFollowed,
 } from '../../libs/config';
 import { Direction, Message } from '../../libs/enums/common.enum';
 import {T} from "../../libs/types/common"
@@ -126,6 +127,9 @@ export class FollowService {
             { $limit: limit },
             //meLiked
             lookupAuthMemberLiked(memberId, "$followingId"),
+            lookupAuthMemberFollowed({
+              followerId: memberId,
+              followingId: "$followingId"}),
             //meFollowed
             lookupFollowingData,
             { $unwind: '$followingData' },
@@ -155,6 +159,9 @@ export class FollowService {
               { $limit: limit },
               //meLiked
               lookupAuthMemberLiked(memberId, "$followerId"),
+              lookupAuthMemberFollowed({
+                followerId: memberId,
+                followingId: "$followerId"}),
               //meFollowed
               lookupFollowerData,
               { $unwind: '$followerData' },
