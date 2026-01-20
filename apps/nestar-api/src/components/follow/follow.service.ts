@@ -13,7 +13,11 @@ import {
 } from '../../libs/dto/follow/follow';
 import { MemberService } from '../member/member.service';
 import { FollowInquiry } from '../../libs/dto/follow/follow.input';
-import { lookupFollowingData,lookupFollowerData } from '../../libs/config';
+import {
+  lookupFollowingData,
+  lookupFollowerData,
+  lookupAuthMemberLiked,
+} from '../../libs/config';
 import { Direction, Message } from '../../libs/enums/common.enum';
 import {T} from "../../libs/types/common"
 @Injectable()
@@ -121,6 +125,7 @@ export class FollowService {
             { $skip: (page - 1) * limit },
             { $limit: limit },
             //meLiked
+            lookupAuthMemberLiked(memberId, "$followingId"),
             //meFollowed
             lookupFollowingData,
             { $unwind: '$followingData' },
@@ -149,6 +154,7 @@ export class FollowService {
               { $skip: (page - 1) * limit },
               { $limit: limit },
               //meLiked
+              lookupAuthMemberLiked(memberId, "$followerId"),
               //meFollowed
               lookupFollowerData,
               { $unwind: '$followerData' },
