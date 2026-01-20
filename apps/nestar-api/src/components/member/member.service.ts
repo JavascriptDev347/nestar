@@ -22,6 +22,7 @@ import { ViewGroup } from '../../libs/enums/view.enum';
 import { LikeInput } from '../../libs/dto/like/like.input';
 import { LikeGroup } from '../../libs/enums/like.enum';
 import { LikeService } from '../like/like.service';
+import { Follower, Following, MeFollowed } from '../../libs/dto/follow/follow';
 
 @Injectable()
 export class MemberService {
@@ -130,6 +131,8 @@ export class MemberService {
         likeGroup: LikeGroup.MEMBER
       };
       targetMember.meLiked = await this.likeService.checkLikeExistence(likeInput);
+
+      targetMember.meFollowed = await this.checksubscription(memberId, targetId);
     }
 
     return targetMember;
@@ -178,6 +181,23 @@ export class MemberService {
     if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
     return result;
   }
+
+  private async checksubscription(followerId: ObjectId, followingId: ObjectId): Promise<MeFollowed[]>{
+    const result = await this.followModel.findOne(
+      {
+        followerId: followerId,
+        followingId: followingId,
+      }
+    ).exec();
+    return result ? [
+      {
+        followerId: followerId,
+        followingId: followingId,
+        myFollowing: true
+      }
+    ]:[];
+  }
+
 
   public async getAgents(
     memberId: ObjectId,
@@ -262,3 +282,5 @@ export class MemberService {
     return result;
   }
 }
+
+
